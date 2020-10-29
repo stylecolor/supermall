@@ -16,6 +16,11 @@ export default {
   .nav_bar{
     display: flex;
     line-height: 44px;
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    z-index: 5;
+    width: 100%;
   }
   .left,.right{
     width: 60px;
