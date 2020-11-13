@@ -3,19 +3,37 @@
     <nav-bar class="home_nav">
       <div slot="center">商品展示</div>
     </nav-bar>
-    <scroll class="content"  ref="scroll">
-      <home-swiper :bannerData="bannerData"></home-swiper>
+       <tab-control
+        style="position: sticky; top: 0px; z-index: 5"
+        :titles="['最新', '热门', '火爆']"
+        @tabClick="tabClick"
+         ref="tabControl1"
+        v-show="(-topCount)>tabControlTop"
+      ></tab-control>
+    <scroll
+      class="content"
+      ref="scroll"
+      :probeType="3"
+      @scroll="contentScroll"
+      :pullUpLoad="true"
+      @onPullingUp="loadMore"
+    >
+      <home-swiper :bannerData="bannerData" @swiperLoad="onSwiperLoad"></home-swiper>
       <recommend-view :recommendData="recommendData"> </recommend-view>
       <feature-view title="本周流行"></feature-view>
       <tab-control
         style="position: sticky; top: 0px; z-index: 5"
         :titles="['最新', '热门', '火爆']"
         @tabClick="tabClick"
+        ref="tabControl2"
       ></tab-control>
       <goods-list :goodsArroy="showGood"></goods-list>
-    
     </scroll>
-      <back-top @click.native="backTopClick"></back-top>
+    <back-top
+      style="background-color: white; border-radius: 100%"
+      @click.native="backTopClick"
+      v-show="topCount < -200"
+    ></back-top>
   </div>
 </template>
 
@@ -30,6 +48,7 @@ import homeSwiper from "./childComps/homeSwiper";
 import RecommendView from "./childComps/RecommendView";
 import FeatureView from "./childComps/FeatureView";
 import { getHomeData, getHomeGoods } from "network/homeRequest";
+import { debounce } from "common/const"
 
 export default {
   name: "Home",
@@ -53,21 +72,49 @@ export default {
         sell: { page: 0, list: [] },
       },
       currentType: "pop",
+      topCount: 0,
+      tabControlTop:0,
     };
   },
   created() {
+    // 请求轮播的数据
     this.onGetHomeData();
+    // 请求goods的数据
     this.onGetHomeGoods("pop");
     this.onGetHomeGoods("new");
     this.onGetHomeGoods("sell");
     //  console.log(this.bannerData) 这里打印不出来是因为上面是个异步操作
+  },
+  mounted() {
+    const refresh = debounce(this.$refs.scroll.refresh,500);
+    this.$bus.$on("itemImageLoad", () => {
+      // console.log('shui')
+    //  debounce(this.$refs.scroll.refresh(), 500)(); 这样写this.$refs.scroll获取不到
+       refresh();
+    });
+
   },
   computed: {
     showGood() {
       return this.goods[this.currentType].list;
     },
   },
+  destroyed(){
+      console.log('销毁')
+  },
+  // 当前页面处于活跃
+  activated(){
+    console.log('活跃')
+    // console.log(this.$refs.scroll)
+    this.$refs.scroll.scroll.scrollTo(0,this.topCount)
+  },
+  // 当前页面处于不活跃
+  deactivated(){
+      console.log('不活跃')
+      this.topCount =   this.$refs.scroll.scroll.y
+  },
   methods: {
+ 
     // 事件监听
     tabClick(index) {
       switch (index) {
@@ -83,6 +130,8 @@ export default {
         default:
           break;
       }
+        this.$refs.tabControl2.currentIndex = index;
+        this.$refs.tabControl1.currentIndex = index;
     },
 
     // 网络请求
@@ -97,29 +146,45 @@ export default {
       const page = this.goods[type].page + 1;
       getHomeGoods(type, page).then((res) => {
         this.goods[type].list.push(...res.data.list),
-         this.goods[type].page += 1;
+          (this.goods[type].page += 1);
         // console.log(res);
+        this.$refs.scroll.finishPullUp();
       });
     },
 
+    backTopClick() {
+      this.$refs.scroll.gotoScroll(0, 0, 500);
+    },
 
-      backTopClick(){
-        this.$refs.scroll.gotoScroll(0,0,500);
-      },
+    contentScroll(position) {
+      // console.log(position);
+      this.topCount = position.y;
+    },
+
+    // 加载更多
+    loadMore() {
+      this.onGetHomeGoods(this.currentType);
+    },
+
+    onSwiperLoad(){
+       // 所有的组件都有一个属性$el:用于获取组件中的元素
+     this.tabControlTop = this.$refs.tabControl2.$el.offsetTop
+    // console.log(this.$refs.tabControl2.$el.offsetTop)
+    }
   },
 };
 </script>
 
 <style lang="less" scoped>
-#home{
+#home {
   padding-top: 44px;
-height: 100vh;
+  height: 100vh;
 }
 .home_nav {
   background-color: coral;
   color: white;
 }
-.content{
+.content {
   // height: calc(100% - 93px);
   // overflow: hidden;
   // margin-top: 44px;

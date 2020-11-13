@@ -1,11 +1,13 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 
+
 Vue.use(VueRouter)
 const Home = () => import('../views/home/home.vue')
 const Car = () => import('../views/car/car.vue')
 const Me = () => import('../views/me/me.vue')
 const Shopping = () => import('../views/shopping/shopping.vue')
+const Detail = () => import('../views/detail/detail.vue')
 const routes =[
   {
     path:'',
@@ -34,6 +36,13 @@ const routes =[
     component:Me,
     meta:{
       title:'我的'
+    }
+  },
+  {
+    path:'/detail/:iid',
+    component:Detail,
+    meta:{
+      title:'详情'
     }
   }
 ]

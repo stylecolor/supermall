@@ -33,7 +33,7 @@ export default {
   },
   methods: {
     itemClick() {
-      console.log("ddd");
+      // console.log("ddd");
       this.$router.push(this.link);
     },
   },
